@@ -26,19 +26,35 @@ const ContactsPage = () => {
   const [editingContact, setEditingContact] = useState(null);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [contactFormErrors, setContactFormErrors] = useState({});
 
   // Remove error alert - errors are now displayed in UI
 
   // Handle add contact with success message
   const handleAddContact = async (contactData) => {
+    console.log('🔄 ContactsPage: handleAddContact called with:', contactData);
     const result = await addContact(contactData);
+    console.log('📋 ContactsPage: addContact result:', result);
     if (result.success) {
+      console.log('✅ ContactsPage: Contact added successfully, closing form');
       setShowContactForm(false);
+      setContactFormErrors({});  // Clear any previous errors
       if (result.message) {
         setSuccessMessage(result.message);
         // Clear success message after 3 seconds
         setTimeout(() => setSuccessMessage(''), 3000);
       }
+    } else {
+      console.log('❌ ContactsPage: Contact add failed:', result.error);
+      // If we have validation errors from API, pass them to the form
+      if (result.validationErrors) {
+        setContactFormErrors(result.validationErrors);
+      } else {
+        // For general errors, show as success message (error styling)
+        setSuccessMessage(result.error);
+        setTimeout(() => setSuccessMessage(''), 5000);
+      }
+      // Keep the form open so user can fix the errors
     }
   };
 
@@ -96,6 +112,7 @@ const ContactsPage = () => {
           onSave={editingContact ? handleEditContact : handleAddContact}
           onCancel={closeContactForm}
           loading={loading}
+          serverErrors={contactFormErrors}
         />
       )}
 

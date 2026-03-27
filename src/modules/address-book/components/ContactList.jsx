@@ -26,10 +26,17 @@ const formatPhoneDisplay = (phone) => {
 };
 
 const ContactRow = ({ contact, onEdit, onDelete }) => {
-  // Combine first_name and last_name for display
-  const displayName = [contact.first_name, contact.last_name, contact.name]
-    .filter(Boolean)
-    .join(' ') || 'Unknown';
+  // Smart name display logic
+  const displayName = (() => {
+    // If we have first_name or last_name, use those
+    if (contact.first_name || contact.last_name) {
+      return [contact.first_name, contact.last_name]
+        .filter(Boolean)
+        .join(' ');
+    }
+    // Otherwise, fall back to the name field
+    return contact.name || 'Unknown';
+  })();
 
   return (
     <tr key={contact.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
@@ -92,18 +99,19 @@ const DeleteModal = ({ onConfirm, onCancel }) => (
   </div>
 );
 
-const ContactList = ({ 
-  contacts = [], 
-  onEdit, 
-  onDelete, 
-  onBulkUpload, 
-  loading = false, 
-  error = null, 
+const ContactList = ({
+  contacts = [],
+  onEdit,
+  onDelete,
+  onBulkUpload,
+  loading = false,
+  error = null,
   successMessage = null,
-  pagination = null, 
-  onLoadMore = null, 
+  pagination = null,
+  onLoadMore = null,
   totalCount = 0
 }) => {
+  console.log('📋 ContactList rendered with', contacts.length, 'contacts:', contacts.map(c => ({ id: c.id, name: c.name })));
   const [searchTerm, setSearchTerm] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const scrollContainerRef = useRef(null);

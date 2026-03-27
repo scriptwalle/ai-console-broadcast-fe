@@ -34,6 +34,7 @@ const PhoneInput = ({
       },
       boxShadow: state.isFocused ? '0 0 0 1px #3b82f6' : 'none',
       fontSize: '14px',
+      borderRadius: '0.75rem', // rounded-xl
     }),
     option: (provided, state) => ({
       ...provided,
@@ -51,9 +52,20 @@ const PhoneInput = ({
       fontSize: '14px',
       color: '#1f2937',
     }),
+    dropdownIndicator: (provided) => ({
+      ...provided,
+      color: '#6b7280',
+      '&:hover': {
+        color: '#374151',
+      },
+    }),
+    indicatorSeparator: () => ({
+      display: 'none', // Hide the separator line
+    }),
     menu: (provided) => ({
       ...provided,
-      zIndex: 50,
+      zIndex: 1000,
+      position: 'absolute',
     }),
     menuList: (provided) => ({
       ...provided,
@@ -67,7 +79,7 @@ const PhoneInput = ({
   const formatOptionLabel = (country) => (
     <div className="flex items-center">
       <span className="mr-2 text-lg">{country.flag}</span>
-      <span>{country.flag} {country.code} - {country.name}</span>
+      <span>{country.code} - {country.name}</span>
     </div>
   );
 
@@ -133,8 +145,8 @@ const PhoneInput = ({
             formatSingleValue={formatSingleValue}
             isDisabled={disabled}
             placeholder="Select country"
-            menuPortalTarget={document.body}
-            menuPosition="fixed"
+            isSearchable={false}
+            menuPlacement="auto"
           />
         </div>
         

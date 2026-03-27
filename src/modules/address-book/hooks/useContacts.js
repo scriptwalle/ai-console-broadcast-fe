@@ -63,7 +63,7 @@ const contactsReducer = (state, action) => {
         pagination: action.payload.pagination
       };
     };
-    case 'ADD_CONTACT': return { ...state, contacts: [...state.contacts, { ...action.payload, id: `contact-${Date.now()}` }], loading: false, error: null };
+    case 'ADD_CONTACT': return { ...state, contacts: [...state.contacts, { ...action.payload, id: action.payload.id || `contact-${Date.now()}` }], loading: false, error: null };
     case 'UPDATE_CONTACT': return { ...state, contacts: state.contacts.map(c => c.id === action.payload.id ? action.payload : c), loading: false, error: null };
     case 'DELETE_CONTACT': return { ...state, contacts: state.contacts.filter(c => c.id !== action.payload), loading: false, error: null };
     case 'BULK_ADD_CONTACTS': return { ...state, contacts: [...state.contacts, ...action.payload], loading: false, error: null };
@@ -143,61 +143,84 @@ export const useContacts = () => {
 
   // Create contact with API call
   const addContact = async (contactData) => {
+    console.log('🔄 Adding contact:', contactData);
+
     if (!hasAuthConfig()) {
+      console.log('❌ No auth config');
       dispatch({ type: 'SET_ERROR', payload: 'Please configure API settings first' });
       return { success: false, error: 'API configuration required' };
     }
 
     dispatch({ type: 'SET_LOADING', payload: true });
-    
+
     try {
       // Call the actual API to create contact
+      console.log('📡 Calling API to create contact...');
       const response = await addressBookAPI.createContact(contactData);
-      
+      console.log('📡 API Response:', response);
+
       // Check if API returned success: 0 (failure)
       if (response.success === 0) {
+        console.log('❌ API returned failure:', response);
         // Handle validation errors from API
         let errorMessage = 'Failed to create contact';
-        
+        let validationErrors = {};
+
         if (response.errors) {
-          // Convert errors object to readable message
+          // Keep the original errors object for form validation
+          validationErrors = response.errors;
+          // Convert errors object to readable message for fallback
           const errorMessages = Object.values(response.errors);
           if (errorMessages.length > 0) {
             errorMessage = errorMessages.join(', ');
           }
         }
-        
-        dispatch({ type: 'SET_ERROR', payload: errorMessage });
+
+        // Don't set global error - let the form handle validation errors
         dispatch({ type: 'SET_LOADING', payload: false });
-        return { success: false, error: errorMessage };
+        return { success: false, error: errorMessage, validationErrors };
       }
       
       // Handle success case
+      console.log('✅ API Success! Processing response...');
       let successMessage = 'Contact created successfully';
       if (response.data && typeof response.data === 'string') {
         successMessage = response.data; // Use API success message if provided
       }
-      
+
       // Map API fields to display fields for local state
       const name = [contactData.first_name, contactData.last_name]
-        .filter(Boolean)
+        .filter(name => name && name.trim()) // Filter out empty/whitespace-only strings
         .join(' ');
-      
+
       const displayContact = {
-        ...contactData,
+        id: response.data?.id || `contact-${Date.now()}`,
         name: name,
-        whatsapp: contactData.whatsapp_number,
-        id: response.data?.id || `contact-${Date.now()}`
+        first_name: contactData.first_name || '',
+        last_name: contactData.last_name || '',
+        email: contactData.email || '',
+        phone: contactData.phone || '',
+        whatsapp: contactData.whatsapp_number || '',
+        whatsapp_number: contactData.whatsapp_number || '',
+        company_id: contactData.company_id || '',
+        group_id: contactData.group_id || '',
+        groups: contactData.list || [],
+        list: contactData.list || []
       };
 
+      console.log('📝 Display contact created:', displayContact);
+
       // Add to local state, clear loading, and set success message
+      console.log('🔄 Dispatching ADD_CONTACT to state...');
       dispatch({ type: 'ADD_CONTACT', payload: displayContact });
       dispatch({ type: 'SET_LOADING', payload: false });
-      
+
+      console.log('✅ Contact added to state successfully');
       // Return success with message (let the calling component handle displaying it)
       return { success: true, message: successMessage };
     } catch (error) {
-      console.error('Error creating contact:', error);
+      console.error('❌ Error creating contact:', error);
+      console.error('❌ Error details:', error.message, error.stack);
       dispatch({ type: 'SET_ERROR', payload: error.message || 'Failed to create contact' });
       dispatch({ type: 'SET_LOADING', payload: false });
       return { success: false, error: error.message || 'Failed to create contact' };
