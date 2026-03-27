@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, User, Mail } from 'lucide-react';
 import { validateContact } from '../utils/validation.js';
 import { INITIAL_CONTACT_STATE } from '../utils/constants.js';
-import PhoneInput from '../../PhoneInput.jsx';
+import PhoneInput from '../../../components/PhoneInput.jsx';
 
 const FormField = ({ icon: Icon, label, name, type = 'text', value, onChange, error, maxLength, placeholder }) => (
   <div>
